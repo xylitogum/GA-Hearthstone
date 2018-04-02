@@ -30,9 +30,14 @@ class Card:
 		else:
 			self.cost = n
 	def randomize(self):
-		#self.cost = random.randint(1, 10)
-		#self.cost = random.randint(1, 5) * 2
-		self.cost = random.randint(1, 5) * 2 -1
+		global parity
+
+		if parity == 1:
+			self.cost = random.randint(1, 5) * 2 -1
+		elif parity == 2:
+			self.cost = random.randint(1, 5) * 2
+		else:
+			self.cost = random.randint(1, 10)
 
 	def copy(self):
 		return Card(self.cost)
@@ -226,27 +231,15 @@ def get_costs(hand):
 	return card_costs
 
 #Main
-"""
-test_mana = 10
-test_hand = []#[Card(1), Card(3), Card(6)]
-
-for i in range(0, 4):
-	test_card = Card()
-	test_card.randomize()
-	test_hand.append(test_card)
-
-print "test mana:", test_mana
-print "test hand:", get_costs(test_hand)
-
-test_result = find_hand(test_hand, test_mana)
-print "test result:", get_costs(test_result)
-"""
 r = Race()
 num_decks = 50
 num_rounds = 200
+parity = 0
 if len(sys.argv) >= 3:
 	num_decks = int(sys.argv[1])
 	num_rounds = int(sys.argv[2])
+if len(sys.argv) >= 4:
+	parity = int(sys.argv[3])
 r.run(num_decks, num_rounds)
 
 finish_time = time.time()
@@ -260,4 +253,3 @@ with open('results.csv', 'w') as csvfile:
 	for i in range(0, len(avg_scores)):
 		writer.writerow({'round': i, 'avg. scores': avg_scores[i]})
 print "Results has been writen into 'results.csv'. End."
-#test_deck.compete()
