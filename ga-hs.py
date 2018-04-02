@@ -1,12 +1,13 @@
-#!/usr/bin/python
-import random, sys, csv, time
-
+#!/usr/bin/env python3
+import random, sys, csv, time, statistics
 
 # GA parameters
-COMPETE_ROUNDS = 5
-MUTATION_PROBABILITY = 0.1
-MUTATION_AMOUNT = 0.3
-CHAMPIONS_TO_COPY = 5
+COMPETE_ROUNDS = 5 # number of rounds that a deck takes to compute its score upon one iteration
+MUTATION_PROBABILITY = 0.3 # chance of mutation happen upon birth
+MUTATION_AMOUNT = 0.3 # when mutation happens, the amount of genes to randomize
+CHAMPIONS_TO_COPY = 5 # number of champions to directly copy from last generation
+num_decks = 40 # total number of decks in the race
+num_rounds = 500 # total number of iterations would the race take to complete
 
 # Game Constants
 HAND_LIMIT = 10
@@ -15,8 +16,9 @@ MANA_LIMIT = 10
 DECK_CARD_COUNT = 30
 
 # Game Values
-MANA_VALUE_DECAY_RATE = 0.93
 TURN_LIMIT = 10
+MANA_VALUE_DECAY_RATE = 0.85
+
 
 
 start_time = time.time()
@@ -72,7 +74,7 @@ class Deck:
 		for c in self.cards:
 			card_costs.append(c.cost)
 		card_costs.sort()
-		print card_costs
+		print(card_costs)
 
 	def mutate(self):
 		n = int(MUTATION_AMOUNT * len(self.cards))
@@ -101,7 +103,6 @@ class Deck:
 			# use cards in had
 			used_cards = find_hand(comp_hand, comp_mana)
 			# xxx
-			#print score, comp_mana, get_costs(comp_hand), get_costs(used_cards)
 			score += comp_mana_value * comb_mana(used_cards)
 			comp_hand = [c for c in comp_hand if c not in used_cards]
 			comp_mana_value *= MANA_VALUE_DECAY_RATE
@@ -134,7 +135,8 @@ class Race:
 		self.decks.sort(key=lambda d: d.latest_score, reverse=True)
 		winner_decks = []
 		for i in range(0, CHAMPIONS_TO_COPY):
-			self.decks[i].cards.sort()
+			#self.decks[i].debug_print()
+			#self.decks[i].cards.sort(key=lambda c: c.cost) # SORTED INHERIT OR UNSORTED
 			winner_decks.append(self.decks[i])
 			scores.append(float(self.decks[i].latest_score) / float(COMPETE_ROUNDS))
 		avg = sum(scores) / float(len(scores))
@@ -147,6 +149,7 @@ class Race:
 			if (random.random() <= MUTATION_PROBABILITY):
 				new_deck.mutate()
 			generated_decks.append(new_deck)
+			#self.decks[i].debug_print()
 		self.decks = winner_decks + generated_decks
 		self.round_count = self.round_count + 1
 
@@ -156,6 +159,7 @@ class Race:
 
 
 	def update(self):
+		#print("round start")
 		self.compete_one_round()
 		self.update_decks()
 
@@ -172,10 +176,8 @@ class Race:
 
 
 def find_hand(hand, mana):
-
 	sorted_hand = list(hand)
-	sorted_hand.sort()
-	sorted_hand.reverse()
+	sorted_hand.sort(key=lambda c: c.cost, reverse=True)
 	#print sorted_hand
 	return find_hand_recur(sorted_hand, mana, [])
 
@@ -190,8 +192,6 @@ def find_hand_recur(hand, mana, comb):
 	for c in hand:
 		if c.cost <= mana:
 			hand_available.append(c)
-	#print mana, get_costs(comb), get_costs(hand)
-	#print "available: ", get_costs(hand_available)
 	# compare with all possible comb with one more card included
 	if len(hand_available) > 0:
 		best_comb = []
@@ -232,24 +232,34 @@ def get_costs(hand):
 
 #Main
 r = Race()
-num_decks = 50
-num_rounds = 200
+
 parity = 0
 if len(sys.argv) >= 3:
-	num_decks = int(sys.argv[1])
-	num_rounds = int(sys.argv[2])
+	TURN_LIMIT = int(sys.argv[1])
+	MANA_VALUE_DECAY_RATE = float(sys.argv[2])
+
+filename = "results(N="+str(TURN_LIMIT)+",r="+str(MANA_VALUE_DECAY_RATE)
 if len(sys.argv) >= 4:
 	parity = int(sys.argv[3])
+	filename = filename + ",p=" + str(parity)
+filename = filename + ").csv"
+
+print("Simulation Begins.")
 r.run(num_decks, num_rounds)
 
 finish_time = time.time()
-print "Simulation took", finish_time - start_time,"seconds."
-print "writing results...."
-with open('results.csv', 'w') as csvfile:
+print("Simulation took", finish_time - start_time,"seconds to complete.")
+print( "mean = ", statistics.mean(avg_scores))
+print( "stdev = ", statistics.stdev(avg_scores))
+print( "final s = ", avg_scores[len(avg_scores)-1])
+print( "writing results....")
+
+
+with open(filename, 'w') as csvfile:
 
 	fieldnames = ['round', 'avg. scores']
 	writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 	writer.writeheader()
 	for i in range(0, len(avg_scores)):
 		writer.writerow({'round': i, 'avg. scores': avg_scores[i]})
-print "Results has been writen into 'results.csv'. End."
+print ("Results has been writen into '"+filename+"'. End.")
