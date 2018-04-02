@@ -1,7 +1,7 @@
 # GA-Hearthstone
 The purpose of this project is to use Genetic Algorithm to find out deck building strategies that could achieve the best mana curve in Hearthstone.
 
-Requires python 2.7
+Requires python 3
 
 Run "./ga-hs.py [MaxTurn N] [ManaEfficiencyDecay r] [parity option]" to start simulation.
 
@@ -14,5 +14,7 @@ parity options:
 By default, N=10, r=0.9, parity option = 0;
 
 
-The result will be printed in console. Average scores of each generation's "Champion" will also be output to result.csv
+The result will be printed in console, including best decks, stdev and mean of averages cores.
+
+Average scores of each generation's "Champion" will also be output to result(N=xx, r=xx).csv
 
